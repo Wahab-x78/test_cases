@@ -43,7 +43,7 @@ pipeline {
         success {
             script {
                 def testSummary = readFile('email-summary/test-summary.txt')
-                mail to: 'abdulwahabsarwar91@gmail.com',  // Replace with your email
+                mail to: 'qasimalik@gmail.com',  // Replace with your email
                      subject: 'Selenium Tests Passed with Test Results',
                      body: """Tests passed successfully! 🎉
 
@@ -60,7 +60,7 @@ Run at: ${new Date().format('yyyy-MM-dd HH:mm:ss z', TimeZone.getTimeZone('Asia/
             echo 'Tests failed.'
             script {
                 def testSummary = fileExists('email-summary/test-summary.txt') ? readFile('email-summary/test-summary.txt') : 'No test summary available due to test failure.'
-                mail to: 'abdulwahabsarwar91@gmail.com',  // Replace with your email
+                mail to: 'qasimalik@gmail.com',  // Replace with your email
                      subject: 'Selenium Tests Failed',
                      body: """Tests failed.
 
