@@ -2,20 +2,47 @@ import time
 import pytest
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+import subprocess
+import os
+import requests
+
+def get_chromedriver_version():
+    result = subprocess.run(['chromedriver', '--version'], capture_output=True, text=True)
+    return result.stdout.split()[0] if result.returncode == 0 else None
 
 @pytest.fixture
 def driver():
     chrome_options = Options()
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
-    # Use a unique user data directory for each test run
-    chrome_options.add_argument(f"--user-data-dir=/tmp/chrome-profile-{time.time()}")
-    driver = webdriver.Chrome(options=chrome_options)
-    yield driver
-    driver.quit()
+    chrome_options.add_argument("--headless")
+    # Use a unique, writable directory with cleanup
+    user_data_dir = f"/tmp/chrome-profile-{int(time.time())}"
+    chrome_options.add_argument(f"--user-data-dir={user_data_dir}")
+    try:
+        # Verify ChromeDriver version compatibility
+        chromedriver_version = get_chromedriver_version()
+        if not chromedriver_version:
+            raise Exception("ChromeDriver not found or incompatible")
+        service = Service()
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+        # Check if target URL is reachable
+        response = requests.head("http://51.20.89.86:5000")
+        if response.status_code != 200:
+            raise Exception("Target server not reachable")
+        yield driver
+    except Exception as e:
+        raise
+    finally:
+        driver.quit()
+        if os.path.exists(user_data_dir):
+            for item in os.listdir(user_data_dir):
+                os.remove(os.path.join(user_data_dir, item))
+            os.rmdir(user_data_dir)
 
 def test_valid_login(driver):
     driver.get("http://51.20.89.86:5000/login")
