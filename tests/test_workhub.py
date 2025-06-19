@@ -1,18 +1,20 @@
 import time
 import pytest
+import os
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
-@pytest.fixture
+@pytest.fixture(scope="function")  # Ensure a new driver per test function
 def driver():
     chrome_options = Options()
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
-    # Use a unique user data directory for each test run
-    chrome_options.add_argument(f"--user-data-dir=/tmp/chrome-profile-{time.time()}")
+    # Use a highly unique user data directory with process ID, timestamp, and test name
+    unique_dir = f"/tmp/chrome-profile-{os.getpid()}-{time.time()}-{pytest.current_test.__name__}"
+    chrome_options.add_argument(f"--user-data-dir={unique_dir}")
     driver = webdriver.Chrome(options=chrome_options)
     yield driver
     driver.quit()
