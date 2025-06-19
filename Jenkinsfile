@@ -2,6 +2,12 @@ pipeline {
     agent any
 
     stages {
+        stage('Clone Test Repo') {
+            steps {
+                git url: 'https://github.com/Wahab-x78/test_cases', branch: 'main'
+            }
+        }
+
         stage('Run Selenium Tests') {
             steps {
                 sh '''
@@ -37,15 +43,16 @@ pipeline {
         success {
             script {
                 def testSummary = readFile('email-summary/test-summary.txt')
-                mail to: 'your-email@example.com',  // Replace with your email
-                     subject: 'Work-Hub Tests Passed with Test Results',
+                mail to: 'abdulwahabsarwar91@gmail.com',  // Replace with your email
+                     subject: 'Selenium Tests Passed with Test Results',
                      body: """Tests passed successfully! 🎉
 
 Here are the test case results:
 
 ${testSummary}
 
-- Jenkins"""
+- Jenkins
+Run at: ${new Date().format('yyyy-MM-dd HH:mm:ss z', TimeZone.getTimeZone('Asia/Karachi'))} PKT"""
             }
         }
 
@@ -53,15 +60,16 @@ ${testSummary}
             echo 'Tests failed.'
             script {
                 def testSummary = fileExists('email-summary/test-summary.txt') ? readFile('email-summary/test-summary.txt') : 'No test summary available due to test failure.'
-                mail to: 'your-email@example.com',  // Replace with your email
-                     subject: 'Work-Hub Tests Failed',
+                mail to: 'abdulwahabsarwar91@gmail.com',  // Replace with your email
+                     subject: 'Selenium Tests Failed',
                      body: """Tests failed.
 
 Here are the test case results (if available):
 
 ${testSummary}
 
-- Jenkins"""
+- Jenkins
+Run at: ${new Date().format('yyyy-MM-dd HH:mm:ss z', TimeZone.getTimeZone('Asia/Karachi'))} PKT"""
             }
         }
     }
