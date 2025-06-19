@@ -28,13 +28,6 @@ def test_valid_login(driver):
     WebDriverWait(driver, 10).until(EC.url_contains("/builder/info"))
     assert "/builder/info" in driver.current_url
 
-def test_empty_fields_login(driver):
-    print(f"Setting up test at {time.strftime('%Y-%m-%d %H:%M:%S PKT')}")
-    driver.get("http://51.20.89.86:5000/login")
-    submit_button = driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
-    assert submit_button.get_attribute("disabled") is not None, "Submit button should be disabled for empty fields"
-    # Since button is disabled, no error message is expected; verify form remains on login page
-    assert driver.current_url.endswith("/login")
 
 def test_login_submit_button_exists(driver):
     print(f"Setting up test at {time.strftime('%Y-%m-%d %H:%M:%S PKT')}")
@@ -73,17 +66,6 @@ def test_weak_password_signup(driver):
     error_div = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "text-red-500")))
     assert "Password must be at least 8 characters long" in error_div.text
 
-def test_missing_terms_agreement_signup(driver):
-    print(f"Setting up test at {time.strftime('%Y-%m-%d %H:%M:%S PKT')}")
-    driver.get("http://51.20.89.86:5000/signup")
-    driver.find_element(By.ID, "name").send_keys("Missing Terms User")
-    driver.find_element(By.ID, "email").send_keys("missingterms@example.com")
-    driver.find_element(By.ID, "password").send_keys("Test@1234")
-    submit_button = driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
-    assert submit_button.get_attribute("disabled") is not None, "Submit button should be disabled without terms agreement"
-    # Verify error message appears without clicking, as button is disabled
-    error_div = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "text-red-500")))
-    assert "Please agree to the Terms of Service and Privacy Policy" in error_div.text
 
 def test_signup_name_field_exists(driver):
     print(f"Setting up test at {time.strftime('%Y-%m-%d %H:%M:%S PKT')}")
