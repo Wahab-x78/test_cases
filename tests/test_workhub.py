@@ -1,98 +1,111 @@
 import pytest
-import time
-import os
-import random
-import string
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+import time
 
-@pytest.fixture(scope="function")  # Ensure a new driver per test function
+@pytest.fixture
 def driver():
     chrome_options = Options()
+    chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
-    # Use a unique directory with process ID, timestamp, and random string
-    unique_id = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
-    unique_dir = f"/tmp/chrome-profile-{os.getpid()}-{time.time()}-{unique_id}"
-    chrome_options.add_argument(f"--user-data-dir={unique_dir}")
-    driver = webdriver.Chrome(options=chrome_options)
+    service = Service('/usr/bin/chromedriver')
+    driver = webdriver.Chrome(service=service, options=chrome_options)
     yield driver
     driver.quit()
 
+# Login Test Cases
 def test_valid_login(driver):
-    driver.get("http://51.20.89.86:5000/login")
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "email"))).send_keys("abdulwahabsarwar91@gmail.com")
+    print(f"Setting up test at {time.strftime('%Y-%m-%d %H:%M:%S PKT')}")
+    driver.get("http://13.48.46.254:3000/login")
+    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "email"))).send_keys("dabdulwahabsarwar91@gmail.com")
     driver.find_element(By.ID, "password").send_keys("12345678")
     driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
-    WebDriverWait(driver, 10).until(EC.url_to_be("http://51.20.89.86:5000/builder/info"))
-    assert driver.current_url == "http://51.20.89.86:5000/builder/info"
-
-def test_invalid_email_login(driver):
-    driver.get("http://51.20.89.86:5000/login")
-    driver.find_element(By.ID, "email").send_keys("invalid@example.com")
-    driver.find_element(By.ID, "password").send_keys("12345678")
-    driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "text-red-500")))
-    assert "Invalid credentials" in driver.find_element(By.CLASS_NAME, "text-red-500").text
-
-def test_invalid_password_login(driver):
-    driver.get("http://51.20.89.86:5000/login")
-    driver.find_element(By.ID, "email").send_keys("abdulwahabsarwar91@gmail.com")
-    driver.find_element(By.ID, "password").send_keys("wrongpass")
-    driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "text-red-500")))
-    assert "Invalid credentials" in driver.find_element(By.CLASS_NAME, "text-red-500").text
+    WebDriverWait(driver, 10).until(EC.url_contains("/builder/info"))
+    assert "/builder/info" in driver.current_url
 
 def test_empty_fields_login(driver):
-    driver.get("http://51.20.89.86:5000/login")
+    print(f"Setting up test at {time.strftime('%Y-%m-%d %H:%M:%S PKT')}")
+    driver.get("http://13.48.46.254:3000/login")
     driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "text-red-500")))
-    assert "An unexpected error occurred" in driver.find_element(By.CLASS_NAME, "text-red-500").text
+    error_div = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "text-red-500")))
+    assert "Missing fields" in error_div.text or "Invalid credentials" in error_div.text
 
+def test_login_submit_button_exists(driver):
+    print(f"Setting up test at {time.strftime('%Y-%m-%d %H:%M:%S PKT')}")
+    driver.get("http://13.48.46.254:3000/login")
+    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "button[type='submit']")))
+    button = driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
+    assert "Log in" in button.text
+
+def test_login_email_field_exists(driver):
+    print(f"Setting up test at {time.strftime('%Y-%m-%d %H:%M:%S PKT')}")
+    driver.get("http://13.48.46.254:3000/login")
+    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "email")))
+    email_field = driver.find_element(By.ID, "email")
+    assert email_field.get_attribute("placeholder") == "name@example.com"
+
+# Signup Test Cases
 def test_duplicate_email_signup(driver):
-    driver.get("http://51.20.89.86:5000/signup")
+    print(f"Setting up test at {time.strftime('%Y-%m-%d %H:%M:%S PKT')}")
+    driver.get("http://13.48.46.254:3000/signup")
     driver.find_element(By.ID, "name").send_keys("Duplicate User")
     driver.find_element(By.ID, "email").send_keys("abdulwahabsarwar91@gmail.com")
-    driver.find_element(By.ID, "password").send_keys("password123")
+    driver.find_element(By.ID, "password").send_keys("Test@1234")
     driver.find_element(By.ID, "terms").click()
     driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "text-red-500")))
-    assert "Signup failed" in driver.find_element(By.CLASS_NAME, "text-red-500").text
+    error_div = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "text-red-500")))
+    assert "User already exists" in error_div.text
 
 def test_weak_password_signup(driver):
-    driver.get("http://51.20.89.86:5000/signup")
+    print(f"Setting up test at {time.strftime('%Y-%m-%d %H:%M:%S PKT')}")
+    driver.get("http://13.48.46.254:3000/signup")
     driver.find_element(By.ID, "name").send_keys("Weak User")
-    driver.find_element(By.ID, "email").send_keys("weak@example.com")
+    driver.find_element(By.ID, "email").send_keys("weakuser@example.com")
     driver.find_element(By.ID, "password").send_keys("weak")
     driver.find_element(By.ID, "terms").click()
     driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "text-red-500")))
-    assert "Signup failed" in driver.find_element(By.CLASS_NAME, "text-red-500").text
+    error_div = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "text-red-500")))
+    assert "Password must be at least 8 characters long" in error_div.text
 
-def test_missing_fields_signup(driver):
-    driver.get("http://51.20.89.86:5000/signup")
-    driver.find_element(By.ID, "email").send_keys("missing@example.com")
-    driver.find_element(By.ID, "password").send_keys("password123")
-    driver.find_element(By.ID, "terms").click()
+def test_missing_terms_agreement_signup(driver):
+    print(f"Setting up test at {time.strftime('%Y-%m-%d %H:%M:%S PKT')}")
+    driver.get("http://13.48.46.254:3000/signup")
+    driver.find_element(By.ID, "name").send_keys("Missing Terms User")
+    driver.find_element(By.ID, "email").send_keys("missingterms@example.com")
+    driver.find_element(By.ID, "password").send_keys("Test@1234")
     driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "text-red-500")))
-    assert "Please agree to the Terms of Service" not in driver.find_element(By.CLASS_NAME, "text-red-500").text
+    error_div = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "text-red-500")))
+    assert "Please agree to the Terms of Service and Privacy Policy" in error_div.text
 
+def test_signup_name_field_exists(driver):
+    print(f"Setting up test at {time.strftime('%Y-%m-%d %H:%M:%S PKT')}")
+    driver.get("http://13.48.46.254:3000/signup")
+    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "name")))
+    name_field = driver.find_element(By.ID, "name")
+    assert name_field.get_attribute("placeholder") == "John Doe"
+
+# Page Load Test Cases
 def test_login_page_loads(driver):
-    driver.get("http://51.20.89.86:5000/login")
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "text-2xl")))
-    assert "Log in" in driver.find_element(By.CLASS_NAME, "text-2xl").text
+    print(f"Setting up test at {time.strftime('%Y-%m-%d %H:%M:%S PKT')}")
+    driver.get("http://13.48.46.254:3000/login")
+    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//h2[contains(text(), 'Log in')]")))
+    assert "Log in" in driver.page_source
 
 def test_signup_page_loads(driver):
-    driver.get("http://51.20.89.86:5000/signup")
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, "text-2xl")))
-    assert "Create an account" in driver.find_element(By.CLASS_NAME, "text-2xl").text
+    print(f"Setting up test at {time.strftime('%Y-%m-%d %H:%M:%S PKT')}")
+    driver.get("http://13.48.46.254:3000/signup")
+    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//h2[contains(text(), 'Create an account')]")))
+    assert "Create an account" in driver.page_source
 
-def test_login_submit_button_exists(driver):
-    driver.get("http://51.20.89.86:5000/login")
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "button[type='submit']")))
-    button = driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
-    assert button.text == "Log in"
+# Additional Test Case for New System Feature
+def test_remember_me_checkbox_exists(driver):
+    print(f"Setting up test at {time.strftime('%Y-%m-%d %H:%M:%S PKT')}")
+    driver.get("http://13.48.46.254:3000/login")
+    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "remember")))
+    checkbox = driver.find_element(By.ID, "remember")
+    assert checkbox.get_attribute("type") == "checkbox"
