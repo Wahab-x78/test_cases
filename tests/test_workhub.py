@@ -1,6 +1,7 @@
 import time
-import pytest
 import os
+import random
+import string
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -12,8 +13,9 @@ def driver():
     chrome_options = Options()
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
-    # Use a highly unique user data directory with process ID, timestamp, and test name
-    unique_dir = f"/tmp/chrome-profile-{os.getpid()}-{time.time()}-{pytest.current_test.__name__}"
+    # Use a unique directory with process ID, timestamp, and random string
+    unique_id = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
+    unique_dir = f"/tmp/chrome-profile-{os.getpid()}-{time.time()}-{unique_id}"
     chrome_options.add_argument(f"--user-data-dir={unique_dir}")
     driver = webdriver.Chrome(options=chrome_options)
     yield driver
